@@ -1,0 +1,95 @@
+    VPCvalami:
+    Type: String
+    Default: vpc-4baa1c20
+  UbuntuWithNginx: 
+    Type: AWS::EC2::Instance
+    Properties:
+      UserData:
+        !Base64 |
+          #!/bin/bash
+          sudo apt update 
+          sudo apt install nginx -y
+          sudo systemctl restart nginx
+      ImageId: ami-07efac79022b86107
+      KeyName: first
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - !Ref UbuntuSecurityGroup
+  UbuntuWithApache: 
+    Type: AWS::EC2::Instance
+    Properties:
+      UserData:
+        !Base64 |
+          #!/bin/bash
+          sudo apt update 
+          sudo apt install apache2 -y 
+          sudo systemctl restart apache2
+      ImageId: ami-07efac79022b86107
+      KeyName: first
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - !Ref UbuntuSecurityGroup
+  WindowsServer: 
+    Type: AWS::EC2::Instance
+    Properties:
+      UserData:
+        !Base64 |
+          <powershell>
+          Install-WindowsFeature -name Web-Server -IncludeManagementTools
+          </powershell>
+      ImageId: ami-0354df7841220296c
+      KeyName: first
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - !Ref WindowsSecurityGroup
+  UbuntuSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPCvalami
+      GroupDescription: Allow http and ssh to client host
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 85.146.86.195/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 85.146.86.195/0
+  WindowsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPCvalami
+      GroupDescription: Allow http and ssh to client host
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 85.146.86.195/0
+      - IpProtocol: tcp
+        FromPort: 3389
+        ToPort: 3389
+        CidrIp: 85.146.86.195/0
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones:
+      - us-east-2a
+      - us-east-2b
+      - us-east-2c
+      CrossZone: true
+      Instances:
+      - !Ref UbuntuWithNginx
+      - !Ref UbuntuWithApache
+      - !Ref WindowsServer
+      Listeners:
+      - InstancePort: '80'
+        LoadBalancerPort: '80'
+        Protocol: HTTP
+        
+        
+        
+        SharedValueParameter: 
+          Fn::GetAtt: 
+          - NestedStackA
+          - Outputs.SharedValueOutput

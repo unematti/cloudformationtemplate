@@ -1,0 +1,78 @@
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w1ab2c21c45c15c15
+# Amazon EC2 instance in a security group Creates an Amazon EC2 instance in an Amazon EC2 security group.
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  VpcIdParameter:
+    Type: String
+    Default: vpc-9b992ff1
+  ImageIdUbuntu:
+    Type: String
+    Default:  ami-0c960b947cbb2dd16
+  ImadeIdWindows:
+    Type: String
+    Default: ami-0da198ce94f235cdc
+  InstanceTypeParameter:
+    Type: String
+    Default:  t2.micro
+  InstancesWithSecurityTemplate:
+    Type: String
+    Default:  https://templates-cmdrunematti.s3.eu-central-1.amazonaws.com/templates/InstanceWithSecurity.cf
+Resources:
+  UbuntuNginx:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: !Ref InstancesWithSecurityTemplate
+      Parameters: 
+        UserDataParameter:
+          !Base64 |
+            #!/bin/bash
+            sudo apt update 
+            sudo apt install apache2 -y 
+            sudo systemctl restart apache2
+        ImageIdParameter: !Ref ImageIdUbuntu
+        InstanceTypeParameter: !Ref InstanceTypeParameter
+        VpcIdParameter: !Ref VpcIdParameter
+  UbuntuApache:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: !Ref InstancesWithSecurityTemplate
+      Parameters: 
+        UserDataParameter: 
+          !Base64 |
+            #!/bin/bash
+            sudo apt update 
+            sudo apt install nginx -y
+            sudo systemctl restart nginx
+        ImageIdParameter: !Ref ImageIdUbuntu
+        InstanceTypeParameter: !Ref InstanceTypeParameter
+        VpcIdParameter: !Ref VpcIdParameter
+  WindowsServer:
+    Type: AWS::CloudFormation::Stack
+    Properties: 
+      TemplateURL: !Ref InstancesWithSecurityTemplate
+      Parameters: 
+        UserDataParameter:
+          !Base64 |
+            <powershell>
+            Install-WindowsFeature -name Web-Server -IncludeManagementTools
+            </powershell>
+        ImageIdParameter: !Ref ImadeIdWindows
+        InstanceTypeParameter: !Ref InstanceTypeParameter
+        VpcIdParameter: !Ref VpcIdParameter
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones:
+      - eu-central-1a
+      - eu-central-1b
+      - eu-central-1c
+      CrossZone: true
+      Instances:
+      - !GetAtt UbuntuNginx.Outputs.InstanceName
+      - !GetAtt UbuntuApache.Outputs.InstanceName
+      - !GetAtt WindowsServer.Outputs.InstanceName
+      Listeners:
+      - InstancePort: '80'
+        LoadBalancerPort: '80'
+        Protocol: HTTP

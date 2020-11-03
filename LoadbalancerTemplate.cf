@@ -1,0 +1,24 @@
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w1ab2c21c45c15c15
+# Amazon EC2 instance in a security group Creates an Amazon EC2 instance in an Amazon EC2 security group.
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+ # AZParameter:
+#    Type: String
+  InstancesParameter:
+    Type: CommaDelimitedList
+Resources:
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones:
+      - eu-central-1a
+      - eu-central-1b
+      - eu-central-1c
+      CrossZone: true
+      Instances:
+      - !Ref InstancesParameter
+      Listeners:
+      - InstancePort: '80'
+        LoadBalancerPort: '80'
+        Protocol: HTTP
