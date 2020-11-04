@@ -14,13 +14,7 @@ Parameters:
   VpcIdParameter:
     Type: String
   AvailabilityZones:
-    Type: List<AWS::EC2::AvailabilityZone::Name>
-    Default:
-      eu-central-1a
-    AllowedValues:
-    - eu-central-1a
-    - eu-central-1b
-    - eu-central-1c
+    Type: List<String>
   MaxSize:
     Type: Number
     Default: 3
@@ -34,19 +28,16 @@ Resources:
       LoadBalancerNames:
       - !Ref LoadBalancerNameParameter
       AvailabilityZones: !Ref AvailabilityZones
-      LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplate
-        Version: v1
+      LaunchConfigurationName: !Ref LaunchConfiguration
       MaxSize: !Ref MaxSize
       MinSize: !Ref Minsize
-  LaunchTemplate:
-    Type: AWS::EC2::LaunchTemplate
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration 
     Properties:
-      LaunchTemplateData:
-        UserData: !Ref UserDataParameter
-        InstanceType: !Ref InstanceTypeParameter
-        ImageId: !Ref ImageIdParameter
-        SecurityGroups:
+      UserData: !Ref UserDataParameter
+      InstanceType: !Ref InstanceTypeParameter
+      ImageId: !Ref ImageIdParameter
+      SecurityGroups:
         - !Ref SecurityGroup
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
