@@ -3,7 +3,7 @@ import boto3
 
 
 ec2 = boto3.client('ec2')
-response = ec2.describe_instances()
+response = ec2.describe_instances(Filters = [{'Name' : 'instance-state-name', 'Values' : ['running'] }])
 waiter = ec2.get_waiter('instance_terminated')
 
 lenght = len(response['Reservations'])
