@@ -1,0 +1,60 @@
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w1ab2c21c45c15c15
+# Amazon EC2 instance in a security group Creates an Amazon EC2 instance in an Amazon EC2 security group.
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  LoadBalancerNameParameter:
+    Type: String
+  UserDataParameter:
+    Type: String
+  ImageIdParameter:
+    Type: AWS::EC2::Image::Id
+  InstanceTypeParameter:
+    Type: String
+  VpcIdParameter:
+    Type: String
+  AvailabilityZones:
+    Type: List<AWS::EC2::AvailabilityZone::Name>
+    Default:
+      eu-central-1a
+    AllowedValues:
+    - eu-central-1a
+    - eu-central-1b
+    - eu-central-1c
+  MaxSize:
+    Type: Number
+    Default: 3
+  Minsize:
+    Type: Number 
+    Default: 1
+Resources:
+  AutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LoadBalancerNames:
+      - !Ref LoadBalancerNameParameter
+      AvailabilityZones: !Ref AvailabilityZones
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: v1
+      MaxSize: !Ref MaxSize
+      MinSize: !Ref Minsize
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        UserData: !Ref UserDataParameter
+        InstanceType: !Ref InstanceTypeParameter
+        ImageId: !Ref ImageIdParameter
+        SecurityGroups:
+        - !Ref SecurityGroup
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http
+      VpcId: !Ref VpcIdParameter
+      SecurityGroupIngress:
+       - IpProtocol: tcp
+         FromPort: 80
+         ToPort: 80
+         CidrIp: 85.146.86.195/0

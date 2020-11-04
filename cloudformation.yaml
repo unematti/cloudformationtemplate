@@ -3,40 +3,51 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
-  VpcIdParameter:
+#  CloudformationKeyName:
+#    Type: String
+  VpcId:
     Type: String
     Default: vpc-9b992ff1
+  AvailabilityZones:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default:
+      eu-central-1a
+    AllowedValues:
+    - eu-central-1a
+    - eu-central-1b
+    - eu-central-1c
   ImageIdUbuntu:
-    Type: String
+    Type: AWS::EC2::Image::Id
     Default:  ami-0c960b947cbb2dd16
-  ImadeIdWindows:
-    Type: String
+  ImageIdWindows:
+    Type: AWS::EC2::Image::Id
     Default: ami-0da198ce94f235cdc
-  InstanceTypeParameter:
+  InstanceType:
     Type: String
     Default:  t2.micro
-  InstancesWithSecurityTemplate:
+  LaunchTemplateUrl:
     Type: String
     Default:  https://templates-cmdrunematti.s3.eu-central-1.amazonaws.com/templates/InstanceWithSecurity.cf
 Resources:
   UbuntuNginx:
-    Type: AWS::CloudFormation::Stack
-    Properties: 
-      TemplateURL: !Ref InstancesWithSecurityTemplate
-      Parameters: 
-        UserDataParameter:
-          !Base64 |
-            #!/bin/bash
-            sudo apt update 
-            sudo apt install apache2 -y 
-            sudo systemctl restart apache2
-        ImageIdParameter: !Ref ImageIdUbuntu
-        InstanceTypeParameter: !Ref InstanceTypeParameter
-        VpcIdParameter: !Ref VpcIdParameter
+     Type: AWS::CloudFormation::Stack
+     Properties: 
+       TemplateURL: !Ref LaunchTemplateUrl
+       Parameters: 
+         UserDataParameter:
+           !Base64 |
+             #!/bin/bash
+             sudo apt update 
+             sudo apt install apache2 -y 
+             sudo systemctl restart apache2
+         ImageIdParameter: !Ref ImageIdUbuntu
+         InstanceTypeParameter: !Ref InstanceType
+         VpcIdParameter: !Ref VpcId
+         LoadBalancerNameParameter: !Ref LoadBalancer
   UbuntuApache:
     Type: AWS::CloudFormation::Stack
     Properties: 
-      TemplateURL: !Ref InstancesWithSecurityTemplate
+      TemplateURL: !Ref LaunchTemplateUrl
       Parameters: 
         UserDataParameter: 
           !Base64 |
@@ -45,28 +56,28 @@ Resources:
             sudo apt install nginx -y
             sudo systemctl restart nginx
         ImageIdParameter: !Ref ImageIdUbuntu
-        InstanceTypeParameter: !Ref InstanceTypeParameter
-        VpcIdParameter: !Ref VpcIdParameter
+        InstanceTypeParameter: !Ref InstanceType 
+        VpcIdParameter: !Ref VpcId
+        LoadBalancerNameParameter: !Ref LoadBalancer
   WindowsServer:
     Type: AWS::CloudFormation::Stack
     Properties: 
-      TemplateURL: !Ref InstancesWithSecurityTemplate
+      TemplateURL: !Ref LaunchTemplateUrl
       Parameters: 
         UserDataParameter:
           !Base64 |
             <powershell>
             Install-WindowsFeature -name Web-Server -IncludeManagementTools
             </powershell>
-        ImageIdParameter: !Ref ImadeIdWindows
-        InstanceTypeParameter: !Ref InstanceTypeParameter
-        VpcIdParameter: !Ref VpcIdParameter
+        ImageIdParameter: !Ref ImageIdWindows
+        InstanceTypeParameter: !Ref InstanceType
+        VpcIdParameter: !Ref VpcId
+        LoadBalancerNameParameter: !Ref LoadBalancer
   LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       AvailabilityZones:
-      - eu-central-1a
-      - eu-central-1b
-      - eu-central-1c
+        - !Ref AvailabilityZones
       CrossZone: true
       Instances:
       - !GetAtt UbuntuNginx.Outputs.InstanceName
